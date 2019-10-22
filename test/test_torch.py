@@ -40,6 +40,7 @@ _fp16_supported = _v2_api
 # MLSL supports only byte, float and double data types
 mlsl_supported_types = set([torch.FloatTensor, torch.DoubleTensor])
 
+
 class TorchTests(unittest.TestCase):
     """
     Tests for ops in horovod.torch.
