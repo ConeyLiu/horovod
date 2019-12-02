@@ -1479,7 +1479,7 @@ setup(name='horovod',
               'numpy',
               'petastorm',
               'pyarrow>=0.15.0',  # Petastorm 0.7.7 is not compatible with < 0.15.0
-              'pyspark'
+              'pyspark>=2.3.2'
           ],
       },
       zip_safe=False,
