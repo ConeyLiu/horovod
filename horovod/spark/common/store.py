@@ -136,14 +136,14 @@ class PrefixStore(Store):
         super(PrefixStore, self).__init__()
 
     def exists(self, path):
-        return self.get_filesystem().exists(self.get_localized_path(path))
+        return self.get_filesystem().exists(path)
 
     def read(self, path):
-        with self.get_filesystem().open(self.get_localized_path(path), 'rb') as f:
+        with self.get_filesystem().open(path, 'rb') as f:
             return f.read()
 
     def get_parquet_dataset(self, path):
-        return pq.ParquetDataset(self.get_localized_path(path), filesystem=self.get_filesystem())
+        return pq.ParquetDataset(path, filesystem=self.get_filesystem())
 
     def get_train_data_path(self, idx=None):
         return '{}.{}'.format(self._train_path, idx) if idx is not None else self._train_path
