@@ -158,6 +158,12 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
     def getLossConstructors(self):
         return self.getOrDefault(self.loss_constructors)
 
+    def setBackendKWArgs(self, value):
+        return self._set(backend_kwargs=value)
+
+    def getBackendKWArgs(self):
+        return self.getOrDefault(self.backend_kwargs)
+
     def _get_optimizer(self):
         return self.getOrDefault(self.optimizer)
 
@@ -195,7 +201,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
             return self._fit_on_parquet()
 
     def _fit_on_parquet(self):
-        backend = self._get_or_create_backend(self.backend_kwargs)
+        backend = self._get_or_create_backend(self.getBackendKWArgs())
         store = self.getStore()
         label_columns = self.getLabelCols()
         feature_columns = self.getFeatureCols()
@@ -210,7 +216,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
         return self._fit_on_prepared_data(backend, train_rows, val_rows, metadata, avg_row_size)
 
     def _fit(self, df):
-        backend = self._get_or_create_backend(self.backend_kwargs)
+        backend = self._get_or_create_backend(self.getBackendKWArgs())
         with util.prepare_data(backend.num_processes(),
                                self.getStore(),
                                df,
