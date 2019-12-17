@@ -89,6 +89,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
                               'functions that construct the loss')
     train_minibatch_fn = Param(Params._dummy(), 'train_minibatch_fn',
                                'functions that construct the minibatch train function for torch')
+    backend_kwargs = Param(Params._dummy(), 'backend_kwargs', 'extra kw args for backend')
 
     @keyword_only
     def __init__(self,
@@ -116,7 +117,8 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
                  run_id=None,
                  train_minibatch_fn=None,
                  train_steps_per_epoch=None,
-                 validation_steps_per_epoch=None):
+                 validation_steps_per_epoch=None,
+                 backend_kwargs={}):
         super(TorchEstimator, self).__init__()
         self._setDefault(loss_constructors=None,
                          input_shapes=None,
@@ -178,10 +180,10 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
                                        self.getLabelCols(),
                                        input_shapes=self.getInputShapes())
 
-    def _get_or_create_backend(self):
+    def _get_or_create_backend(self, kwargs):
         backend = self.getBackend()
         if backend is None:
-            backend = SparkBackend(self.getNumProc())
+            backend = SparkBackend(self.getNumProc(), **kwargs)
         elif self.getNumProc() is not None:
             raise ValueError('At most one of parameters "backend" and "num_proc" may be specified')
         return backend
