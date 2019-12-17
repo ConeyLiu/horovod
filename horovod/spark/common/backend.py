@@ -56,10 +56,6 @@ class SparkBackend(Backend):
         if env:
             full_env.update(env)
 
-        full_kwargs = self._kwargs or {}
-        if kwargs:
-            self._kwargs.update(kwargs)
-
         if 'CUDA_VISIBLE_DEVICES' in full_env:
             # In TensorFlow 2.0, we set this before calling `run` in order to prevent TensorFlow
             # from allocating memory on the GPU outside the training process.  Once we submit the
@@ -68,7 +64,7 @@ class SparkBackend(Backend):
             # See https://github.com/tensorflow/tensorflow/issues/33168
             del full_env['CUDA_VISIBLE_DEVICES']
 
-        return horovod.spark.run(fn, args=args, kwargs=full_kwargs,
+        return horovod.spark.run(fn, args=args, kwargs=kwargs,
                                  num_proc=self._num_proc, env=full_env,
                                  **self._kwargs)
 

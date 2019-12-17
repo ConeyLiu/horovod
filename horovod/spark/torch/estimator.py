@@ -195,7 +195,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
             return self._fit_on_parquet()
 
     def _fit_on_parquet(self):
-        backend = self._get_or_create_backend()
+        backend = self._get_or_create_backend(self.backend_kwargs)
         store = self.getStore()
         label_columns = self.getLabelCols()
         feature_columns = self.getFeatureCols()
@@ -210,7 +210,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
         return self._fit_on_prepared_data(backend, train_rows, val_rows, metadata, avg_row_size)
 
     def _fit(self, df):
-        backend = self._get_or_create_backend()
+        backend = self._get_or_create_backend(self.backend_kwargs)
         with util.prepare_data(backend.num_processes(),
                                self.getStore(),
                                df,
