@@ -209,10 +209,10 @@ class KerasEstimator(Estimator, EstimatorParams, KerasEstimatorParamsReadable,
                          for output in model.outputs]
         return input_shapes, output_shapes
 
-    def _get_or_create_backend(self):
+    def _get_or_create_backend(self, kwargs):
         backend = self.getBackend()
         if backend is None:
-            backend = SparkBackend(self.getNumProc())
+            backend = SparkBackend(self.getNumProc(), **kwargs)
         elif self.getNumProc() is not None:
             raise ValueError('At most one of parameters "backend" and "num_proc" may be specified')
         return backend
@@ -224,7 +224,7 @@ class KerasEstimator(Estimator, EstimatorParams, KerasEstimatorParamsReadable,
             return self._fit_on_parquet()
 
     def _fit_on_parquet(self):
-        backend = self._get_or_create_backend()
+        backend = self._get_or_create_backend(self.getBackendKWArgs())
         store = self.getStore()
         label_columns = self.getLabelCols()
         feature_columns = self.getFeatureCols()
@@ -239,7 +239,7 @@ class KerasEstimator(Estimator, EstimatorParams, KerasEstimatorParamsReadable,
         return self._fit_on_prepared_data(backend, train_rows, val_rows, metadata, avg_row_size)
 
     def _fit(self, df):
-        backend = self._get_or_create_backend()
+        backend = self._get_or_create_backend(self.getBackendKWArgs())
         with util.prepare_data(backend.num_processes(),
                                self.getStore(),
                                df,

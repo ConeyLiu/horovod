@@ -78,6 +78,8 @@ class EstimatorParams(Params):
                    'then training will resume from last checkpoint in the store',
                    typeConverter=TypeConverters.toString)
 
+    backend_kwargs = Param(Params._dummy(), 'backend_kwargs', 'extra kw args for backend')
+
     def __init__(self):
         super(EstimatorParams, self).__init__()
 
@@ -274,6 +276,12 @@ class EstimatorParams(Params):
 
     def getRunId(self):
         return self.getOrDefault(self.run_id)
+
+    def setBackendKWArgs(self, value):
+        return self._set(backend_kwargs=value)
+
+    def getBackendKWArgs(self):
+        return self.getOrDefault(self.backend_kwargs)
 
 
 class ModelParams(HasOutputCols):

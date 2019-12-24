@@ -89,7 +89,6 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
                               'functions that construct the loss')
     train_minibatch_fn = Param(Params._dummy(), 'train_minibatch_fn',
                                'functions that construct the minibatch train function for torch')
-    backend_kwargs = Param(Params._dummy(), 'backend_kwargs', 'extra kw args for backend')
 
     @keyword_only
     def __init__(self,
@@ -117,8 +116,7 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
                  run_id=None,
                  train_minibatch_fn=None,
                  train_steps_per_epoch=None,
-                 validation_steps_per_epoch=None,
-                 backend_kwargs={}):
+                 validation_steps_per_epoch=None):
         super(TorchEstimator, self).__init__()
         self._setDefault(loss_constructors=None,
                          input_shapes=None,
@@ -157,12 +155,6 @@ class TorchEstimator(Estimator, EstimatorParams, TorchEstimatorParamsWritable,
 
     def getLossConstructors(self):
         return self.getOrDefault(self.loss_constructors)
-
-    def setBackendKWArgs(self, value):
-        return self._set(backend_kwargs=value)
-
-    def getBackendKWArgs(self):
-        return self.getOrDefault(self.backend_kwargs)
 
     def _get_optimizer(self):
         return self.getOrDefault(self.optimizer)
