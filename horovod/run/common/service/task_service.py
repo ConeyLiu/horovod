@@ -14,8 +14,11 @@
 # ==============================================================================
 
 import os
+import six
 import threading
 import time
+
+from six.moves import queue
 
 from horovod.run.common.util import network
 from horovod.run.common.util import safe_shell_exec
@@ -59,6 +62,8 @@ class BasicTaskService(network.BasicService):
         self._wait_cond = threading.Condition()
         self._service_env_keys = service_env_keys
         self._command_thread = None
+        self._command_thread_queue = None
+        self._command_thread_stderr = None
         self._fn_result = None
 
     def _handle(self, req, client_address):
@@ -74,9 +79,18 @@ class BasicTaskService(network.BasicService):
                         if value is not None:
                             req.env[key] = value
 
+                    self._command_thread_queue = queue.Queue(1)
+                    self._command_thread_stderr = six.StringIO()
+                    self_service = self
+
+                    def wrap_execute(command, env):
+                        exit_code = safe_shell_exec.execute(command,
+                                                            env,
+                                                            stderr=self_service._command_thread_stderr)
+                        self_service._command_thread_queue.put(exit_code)
                     # We only permit executing exactly one command, so this is idempotent.
                     self._command_thread = threading.Thread(
-                        target=safe_shell_exec.execute,
+                        target=wrap_execute,
                         args=(req.command, req.env))
                     self._command_thread.daemon = True
                     self._command_thread.start()
@@ -131,7 +145,19 @@ class BasicTaskService(network.BasicService):
             self._wait_cond.release()
 
     def wait_for_command_termination(self):
-        self._command_thread.join()
+        try:
+            self._command_thread.join()
+        finally:
+            io = self._command_thread_stderr
+            self._command_thread_stderr = io.getvalue()
+            io.close()
+
+    def check_for_command_failures(self):
+        exit_code = self._command_thread_queue.get()
+        if exit_code != 0:
+            raise Exception('Command exit code: {}, error message: {}'
+                            .format(exit_code,
+                                    self._command_thread_stderr))
 
 
 class BasicTaskClient(network.BasicClient):

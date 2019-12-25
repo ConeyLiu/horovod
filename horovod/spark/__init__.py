@@ -58,6 +58,7 @@ def _task_fn(index, driver_addresses, settings):
             # Task with first index will execute orted that will run mpirun_exec_fn for all tasks.
             task.wait_for_command_start(settings.timeout)
             task.wait_for_command_termination()
+            task.check_for_command_failures()
         else:
             # The rest of tasks need to wait for the first task to finish.
             first_task_addresses = driver_client.all_task_addresses(task_indices_on_this_host[0])
