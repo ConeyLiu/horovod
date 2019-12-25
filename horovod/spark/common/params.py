@@ -106,7 +106,8 @@ class EstimatorParams(Params):
             partitions_per_process=10,
             run_id=None,
             train_steps_per_epoch=None,
-            validation_steps_per_epoch=None)
+            validation_steps_per_epoch=None,
+            backend_kwargs={})
 
     def _check_params(self, metadata):
         model = self.getModel()
