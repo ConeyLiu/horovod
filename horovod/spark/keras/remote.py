@@ -134,7 +134,7 @@ def RemoteTrainer(estimator, metadata, keras_utils, run_id, dataset_idx):
 
                 callbacks.append(k.callbacks.ModelCheckpoint(ckpt_file))
                 if remote_store.saving_runs:
-                    callbacks.append(k.callbacks.TensorBoard(logs_dir))
+                    callbacks.append(k.callbacks.TensorBoard(log_dir=logs_dir, histogram_freq=1, profile_batch=3))
                     callbacks.append(SyncCallback(run_output_dir, remote_store.sync, k))
 
             if train_steps_per_epoch is None:
