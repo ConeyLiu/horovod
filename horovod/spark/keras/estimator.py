@@ -23,6 +23,7 @@ import time
 import numpy as np
 import tensorflow as tf
 
+from pyspark import SparkContext
 from pyspark import keyword_only
 from pyspark.ml import Model
 from pyspark.ml.util import MLWritable, MLReadable
@@ -225,7 +226,11 @@ class KerasEstimator(HorovodEstimator, KerasEstimatorParamsReadable,
         # https://stackoverflow.com/questions/50583056/is-there-any-way-to-set-java-opts-for-tensorflow-process/50615570
         env = {'LIBHDFS_OPTS': '-Xms2048m -Xmx2048m'}
 
-        trainer = remote.RemoteTrainer(self, metadata, keras_utils, run_id, dataset_idx)
+        sc = SparkContext._active_spark_context
+        conf = sc.getConf()
+        cores_per_task = conf.get('spark.task.cpus')
+
+        trainer = remote.RemoteTrainer(self, metadata, keras_utils, run_id, dataset_idx, cores_per_task)
         handle = backend.run(trainer,
                              args=(serialized_model, train_rows, val_rows, avg_row_size),
                              env=env)
@@ -393,6 +398,10 @@ class KerasModel(Model, ModelParams, KerasEstimatorParamsReadable,
         custom_objects = self.getCustomObjects()
         metadata = self._get_metadata()
 
+        sc = SparkContext._active_spark_context
+        conf = sc.getConf()
+        cores_per_task = conf.get('spark.task.cpus')
+
         pin_cpu = remote._pin_cpu_fn()
 
         def predict(rows):
@@ -404,7 +413,7 @@ class KerasModel(Model, ModelParams, KerasEstimatorParamsReadable,
             k.backend.set_floatx(floatx)
 
             # Do not use GPUs for prediction, use single CPU core per task.
-            pin_cpu(tf, k)
+            pin_cpu(tf, k, cores_per_task)
 
             def load_model_fn(x):
                 with k.utils.custom_object_scope(custom_objects):

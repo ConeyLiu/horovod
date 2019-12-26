@@ -34,7 +34,7 @@ TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
 BYTES_PER_GIB = constants.BYTES_PER_GIB
 
 
-def RemoteTrainer(estimator, metadata, keras_utils, run_id, dataset_idx):
+def RemoteTrainer(estimator, metadata, keras_utils, run_id, dataset_idx, cores_per_task):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -67,6 +67,7 @@ def RemoteTrainer(estimator, metadata, keras_utils, run_id, dataset_idx):
     deserialize_keras_model = _deserialize_keras_model_fn()
     calculate_shuffle_buffer_size = _calculate_shuffle_buffer_size_fn()
     pin_gpu = _pin_gpu_fn()
+    pin_cpu = _pin_cpu_fn()
 
     # Storage
     store = estimator.getStore()
@@ -91,7 +92,11 @@ def RemoteTrainer(estimator, metadata, keras_utils, run_id, dataset_idx):
 
         hvd = get_horovod()
         hvd.init()
-        pin_gpu(hvd, tf, k)
+
+        if tf.test.is_gpu_available():
+            pin_gpu(hvd, tf, k)
+        else:
+            pin_cpu(cores_per_task)
 
         if not user_shuffle_buffer_size:
             shuffle_buffer_size = calculate_shuffle_buffer_size(
@@ -274,17 +279,17 @@ def _pin_cpu_fn():
 
 
 def _pin_cpu_tensorflow2_fn():
-    def fn(tf, keras):
+    def fn(tf, keras, num_cores):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-        tf.config.threading.set_inter_op_parallelism_threads(1)
-        tf.config.threading.set_intra_op_parallelism_threads(1)
+        tf.config.threading.set_inter_op_parallelism_threads(num_cores)
+        tf.config.threading.set_intra_op_parallelism_threads(num_cores)
     return fn
 
 
 def _pin_cpu_tensorflow1_fn():
-    def fn(tf, keras):
+    def fn(tf, keras, num_cores):
         config = tf.ConfigProto(device_count={'GPU': 0})
-        config.inter_op_parallelism_threads = 1
-        config.intra_op_parallelism_threads = 1
+        config.inter_op_parallelism_threads = num_cores
+        config.intra_op_parallelism_threads = num_cores
         keras.backend.set_session(tf.Session(config=config))
     return fn
